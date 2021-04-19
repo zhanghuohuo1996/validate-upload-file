@@ -1,14 +1,14 @@
 /*
  * @Author: your name
  * @Date: 2021-04-08 13:41:59
- * @LastEditTime: 2021-04-17 14:07:14
+ * @LastEditTime: 2021-04-17 15:46:42
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: /fe-otms-monitor/src/containers/Demo/index.tsx
  */
 import * as React from 'react';
 import { Upload, Modal } from 'antd';
-import * as ExcelJS from 'exceljs/dist/exceljs.bare';
+const ExcelJS = require('exceljs/dist/exceljs.bare');
 
 const { Dragger } = Upload as any;
 /**类型定义 */

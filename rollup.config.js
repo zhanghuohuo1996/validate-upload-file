@@ -104,6 +104,6 @@ export default {
       'process.env.NODE_ENV':  JSON.stringify(env || 'development'),
     }),
     // 生产环境执行terser压缩代码
-    (env === 'production' && terser()),
+    terser(),
   ],
 }
