@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-04-08 13:41:59
- * @LastEditTime: 2021-04-17 15:46:42
+ * @LastEditTime: 2021-04-29 19:14:22
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: /fe-otms-monitor/src/containers/Demo/index.tsx
@@ -9,16 +9,21 @@
 import * as React from 'react';
 import { Upload, Modal } from 'antd';
 const ExcelJS = require('exceljs/dist/exceljs.bare');
+const Papa = require('papaparse');
+const jschardet = require('jschardet');
+const atob = require('atob');
 
 const { Dragger } = Upload as any;
 /**类型定义 */
 interface IProps {
-    sheetProps: ISheetProps;
+    sheetProps?: ISheetProps;
     handleMoreValidate?: (worksheet: any) => string,
     dragProps?: object,
     style?: object,
     children?: React.ReactNode | string,
     uploadToolTip?: React.ReactNode | string,
+    resultTitle?: string,
+    type?: 'excel' | 'csv', // 默认excel
 };
 type IType = 'list' | 'number' | 'text' | 'custome'; 
 interface ISheetProps {
@@ -76,13 +81,56 @@ function dataValidation(value: any, validation: any) {
 }
 
 const A2Zarray = getEN();
+
+function checkEncoding(base64Str: any) {
+    // 这种方式得到的是一种二进制串
+    let str = atob(base64Str.split(';base64,')[1]);
+    // console.log(str);
+    // 要用二进制格式
+    let encoding = jschardet.detect(str);
+    encoding = encoding.encoding;
+    // console.log( encoding );
+    if (encoding === 'windows-1252') {
+      // 有时会识别错误（如UTF8的中文二字）
+      encoding = 'ANSI';
+    }
+    return encoding;
+}
+
+async function getFileReaderResult(file: any) {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader()
+        fileReader.readAsDataURL(file);
+        fileReader.onload = (e: any) => {
+            const result = e.target.result;
+            const encoding = checkEncoding(result);
+            resolve({
+                file,
+                encoding,
+            });
+        }
+    });
+}
+
+async function getJsonFromCsv(file: any) {
+    const data = await getFileReaderResult(file) as any;
+    return new Promise((resolve, reject) => {
+        Papa.parse(data.file, {
+            encoding: data.encoding,
+            complete: function(results: any) {
+                resolve(results.data);
+            }
+        });
+    });
+}
+
 /**
  * 组件
  * @param props 
  * @returns 
  */
 const Demo = (props: IProps) => {
-    const { sheetProps } = props;
+    const { sheetProps, type='excel' } = props;
     const [modal, setModal] = React.useState({
         visible: false,
         resultContent: '',
@@ -93,9 +141,84 @@ const Demo = (props: IProps) => {
         accept: '.csv,.xlsx',
         action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
         beforeUpload: async (file: any) => {
+            if (!sheetProps) {
+                return true;
+            }
            
             return new Promise(async (resolve, reject) => {
-                console.log('file', file.arrayBuffer());
+                if (type === 'csv') {
+                    const json = await getJsonFromCsv(file) as any;
+                    const csvInfo = {
+                        bodyErrorInfo: [],
+                        titleError: [],
+                        isEmptyCsv: false,
+                        extraErrorInfo: '',
+                    } as any;
+                    // isEmpty
+                    if (!json.length) {
+                        csvInfo.isEmptyCsv = true;
+                        // setModal({
+                        //     visible: true,
+                        //     resultContent: `${modal.resultContent}\n上传为空表，请检查`,
+                        // });
+                        // reject(false);
+                    }
+                    // isErrorTitle
+                    Object.keys(sheetProps).forEach((item: any, index: number) => {
+                        if (item.colTitle !== json[0][index]) {
+                            csvInfo.titleError = (csvInfo.titleError || []).concat(index);
+                        }
+                    });
+                    // isErrorbody
+                    json.forEach((item: any, index: number) => {
+                        if (index) {
+                            item.forEach((value: any, i: number) => {
+                                if (!dataValidation(value, sheetProps[A2Zarray[i + 1]])) {
+                                    csvInfo.bodyErrorInfo.push({
+                                        cellIndex: `行：${index + 1}, 列：${i+1}`,
+                                        errorMessage: sheetProps[A2Zarray[i + 1]].valueErrorMessage || '值为空或类型错误，请检查',
+                                    });
+                                };
+                            });
+                        }
+                    });
+                    // extraInfo
+                    if (props.handleMoreValidate) {
+                        csvInfo.extraErrorInfo = props.handleMoreValidate(json);
+                    }
+                    // 来吧，展示
+                    if (csvInfo.isEmptyCsv) {
+                        setModal({
+                            visible: true,
+                            resultContent: `${modal.resultContent}\n上传为空表，请检查`,
+                        });
+                        reject(false);
+                    }
+                    if (csvInfo.titleError.length) {
+                        setModal({
+                            visible: true,
+                            resultContent: `${modal.resultContent}\n列标题错误，请检查${csvInfo.titleError}`,
+                        });
+                        reject(false);
+                    }
+                    if (csvInfo.bodyErrorInfo.length) {
+                        setModal({
+                            visible: true,
+                            resultContent: `${modal.resultContent}\n内容错误，错误信息如下：\n${csvInfo.bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`))}`,
+                        });
+                        reject(false);
+                    }
+                    if (csvInfo.extraErrorInfo) {
+                        setModal({
+                            visible: true,
+                            resultContent: `${modal.resultContent}\n${csvInfo.extraErrorInfo}`,
+                        });
+                        reject(false);
+                    }
+                    resolve(true);
+                    return;
+                }
+                // 以下是对excel的处理
                 const buffer = file.arrayBuffer();
                 const workbook = new ExcelJS.Workbook();
                 await workbook.xlsx.load(buffer);
@@ -107,15 +230,12 @@ const Demo = (props: IProps) => {
                     sheetInfo[sheetId] = {
                         name: worksheet.name,
                     };
-                    
-                    console.log(worksheet, sheetId);
                     // let breakRowNumber = null as any;
                     let errorTitleIndex = [] as any;
                     let isEmptySheet = false;
                     // 检查主规则
                     let bodyErrorInfo: ICellErrorInfo[] = [];
                     worksheet.eachRow({ includeEmpty: true }, function(row: any, rowNumber: any) {
-                        console.log('Row ' + rowNumber + ' = ' + JSON.stringify(row.values));
                         // 检查头部
                         if (rowNumber === 1) {
                             row.values.forEach((title: string, index: number) => {
@@ -166,6 +286,7 @@ const Demo = (props: IProps) => {
                             visible: true,
                             resultContent: `${modal.resultContent}\n${sheetInfo[key].name}为空表`,
                         })
+                        reject(false);
                     }
                     if (sheetInfo[key].errorTitleIndex.length) {
                         // message.warning(`${sheetInfo[key].name}表标题错误，请检查，列如下：\n${sheetInfo[key].errorTitleIndex}`);
@@ -173,6 +294,7 @@ const Demo = (props: IProps) => {
                             visible: true,
                             resultContent: `${modal.resultContent}\n${sheetInfo[key].name}表标题错误，请检查，列如下：\n${sheetInfo[key].errorTitleIndex}`,
                         })
+                        reject(false);
                     }
                     if (sheetInfo[key].bodyErrorInfo.length) {
                         // console.log(`${sheetInfo[key].name}表内容错误，请检查，单元格如下：\n${sheetInfo[key].bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`))}`);
@@ -181,22 +303,24 @@ const Demo = (props: IProps) => {
                             visible: true,
                             resultContent: `${modal.resultContent}\n${sheetInfo[key].name}表内容错误，请检查，单元格如下：\n${sheetInfo[key].bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`))}`,
                         });
+                        reject(false);
                     }
                     if (sheetInfo[key].extraErrorInfo) {
                         setModal({
                             visible: true,
                             resultContent: `${modal.resultContent}\n${sheetInfo[key].extraErrorInfo}`,
                         });
+                        reject(false);
                     }
                 });
-                console.log(sheetInfo);
-                reject(false);
+                resolve(true);
+                return;
             });
         },
         onChange(info: any) {
           const { status } = info.file;
           if (status !== 'uploading') {
-            console.log(info.file, info.fileList);
+            // console.log(info.file, info.fileList);
           }
           if (status === 'done') {
             // message.success(`${info.file.name} file uploaded successfully.`);
@@ -217,7 +341,7 @@ const Demo = (props: IProps) => {
     return (
         <div style={props.style || {}}>
             { props.children || null }
-            <Modal visible={modal.visible} onOk={handleCancelModal} onCancel={handleCancelModal}>
+            <Modal style={{ whiteSpace: 'pre-line' }} visible={modal.visible} title={props.resultTitle || '校验结果'} onOk={handleCancelModal} onCancel={handleCancelModal}>
                 {
                     modal.resultContent
                 }
