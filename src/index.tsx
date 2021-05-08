@@ -7,7 +7,7 @@
  * @FilePath: /fe-otms-monitor/src/containers/Demo/index.tsx
  */
 import * as React from 'react';
-import { Upload, Modal } from 'antd';
+import { Upload, Modal, Button } from 'antd';
 const ExcelJS = require('exceljs/dist/exceljs.bare');
 const Papa = require('papaparse');
 const jschardet = require('jschardet');
@@ -17,7 +17,7 @@ const { Dragger } = Upload as any;
 /**类型定义 */
 interface IProps {
     sheetProps?: ISheetProps;
-    handleMoreValidate?: (worksheet: any) => string,
+    handleMoreValidate?: (rows: any, worksheet?: any) => string,
     dragProps?: object,
     style?: object,
     children?: React.ReactNode | string,
@@ -65,16 +65,16 @@ function dataValidation(value: any, validation: any) {
         return false;
     }
     //  默认规则
-    if (validation.type === 'list' && !validation.formulae.includes(value)) {
+    if (value && validation.type === 'list' && !validation.formulae.includes(String(value))) {
         return false;
     }
-    if (validation.type === 'number' && !isInteger(Number(value))) {
+    if (value && validation.type === 'number' && !isInteger(Number(value))) {
         return false;
     }
-    if (validation.type === 'custom' && !validation.formulae.test(value)) {
+    if (value && validation.type === 'custom' && !validation.formulae.test(value)) {
         return false;
     }
-    if (validation.type === 'text' && validation.formulae && value.length > validation.formulae) {
+    if (value && validation.type === 'text' && validation.formulae && value.length > validation.formulae) {
         return false;
     }
     return true;
@@ -164,7 +164,7 @@ const Demo = (props: IProps) => {
                         // reject(false);
                     }
                     // isErrorTitle
-                    Object.keys(sheetProps).forEach((item: any, index: number) => {
+                    Object.values(sheetProps).forEach((item: any, index: number) => {
                         if (item.colTitle !== json[0][index]) {
                             csvInfo.titleError = (csvInfo.titleError || []).concat(index);
                         }
@@ -175,7 +175,7 @@ const Demo = (props: IProps) => {
                             item.forEach((value: any, i: number) => {
                                 if (!dataValidation(value, sheetProps[A2Zarray[i + 1]])) {
                                     csvInfo.bodyErrorInfo.push({
-                                        cellIndex: `行：${index + 1}, 列：${i+1}`,
+                                        cellIndex: `${index + 1}行 ${A2Zarray[i + 1]}列`,
                                         errorMessage: sheetProps[A2Zarray[i + 1]].valueErrorMessage || '值为空或类型错误，请检查',
                                     });
                                 };
@@ -187,31 +187,23 @@ const Demo = (props: IProps) => {
                         csvInfo.extraErrorInfo = props.handleMoreValidate(json);
                     }
                     // 来吧，展示
+                    let errorInfo = '';
                     if (csvInfo.isEmptyCsv) {
-                        setModal({
-                            visible: true,
-                            resultContent: `${modal.resultContent}\n上传为空表，请检查`,
-                        });
-                        reject(false);
+                        errorInfo += '上传为空表，请检查';
                     }
                     if (csvInfo.titleError.length) {
-                        setModal({
-                            visible: true,
-                            resultContent: `${modal.resultContent}\n列标题错误，请检查${csvInfo.titleError}`,
-                        });
-                        reject(false);
+                        errorInfo += `\n列标题错误，请检查${csvInfo.titleError}`;
                     }
                     if (csvInfo.bodyErrorInfo.length) {
-                        setModal({
-                            visible: true,
-                            resultContent: `${modal.resultContent}\n内容错误，错误信息如下：\n${csvInfo.bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`))}`,
-                        });
-                        reject(false);
+                        errorInfo += `\n内容错误，错误信息如下：\n${csvInfo.bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`)).join('')}`;
                     }
                     if (csvInfo.extraErrorInfo) {
+                        errorInfo += `\n${csvInfo.extraErrorInfo}`;
+                    }
+                    if (errorInfo) {
                         setModal({
                             visible: true,
-                            resultContent: `${modal.resultContent}\n${csvInfo.extraErrorInfo}`,
+                            resultContent: errorInfo,
                         });
                         reject(false);
                     }
@@ -252,7 +244,7 @@ const Demo = (props: IProps) => {
                         if (rowNumber > 1) {
                             row.values.forEach((value: any, index: number) => {
                                 const colIndex = A2Zarray[index];
-                                const cellIndex = `${colIndex}${rowNumber}`
+                                const cellIndex = `${rowNumber}行 ${colIndex}列`;
                                 if (!dataValidation(value, sheetProps[colIndex])) {
                                     bodyErrorInfo.push({
                                         cellIndex,
@@ -267,7 +259,8 @@ const Demo = (props: IProps) => {
                     // 检查额外逻辑的处理
                     let extraErrorInfo: string = '';
                     if (props.handleMoreValidate) {
-                        extraErrorInfo = props.handleMoreValidate(worksheet);
+                        const rows = worksheet._rows.map((e: any) => Array.isArray(e.values) && e.values.slice(1));
+                        extraErrorInfo = props.handleMoreValidate(rows, worksheet);
                     }
                     sheetInfo[sheetId] = {
                         ...sheetInfo[sheetId],
@@ -278,41 +271,29 @@ const Demo = (props: IProps) => {
                         extraErrorInfo,
                     };
                 });
+                let errorInfo = '';
                 // 对结果进行提示
                 Object.keys(sheetInfo).forEach((key: string | number) => {
                     if (sheetInfo[key].isEmptySheet) {
-                        // message.warning(`${sheetInfo[key].name}为空表`);
-                        setModal({
-                            visible: true,
-                            resultContent: `${modal.resultContent}\n${sheetInfo[key].name}为空表`,
-                        })
-                        reject(false);
+                        errorInfo +=  `${sheetInfo[key].name}为空表`;
                     }
                     if (sheetInfo[key].errorTitleIndex.length) {
-                        // message.warning(`${sheetInfo[key].name}表标题错误，请检查，列如下：\n${sheetInfo[key].errorTitleIndex}`);
-                        setModal({
-                            visible: true,
-                            resultContent: `${modal.resultContent}\n${sheetInfo[key].name}表标题错误，请检查，列如下：\n${sheetInfo[key].errorTitleIndex}`,
-                        })
-                        reject(false);
+                        errorInfo +=  `\n${sheetInfo[key].name}表标题错误，请检查，列如下：\n${sheetInfo[key].errorTitleIndex}`;
                     }
                     if (sheetInfo[key].bodyErrorInfo.length) {
-                        // console.log(`${sheetInfo[key].name}表内容错误，请检查，单元格如下：\n${sheetInfo[key].bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`))}`);
-                        // message.warning(`${sheetInfo[key].name}表内容错误，请检查，单元格如下：\n${sheetInfo[key].bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`))}`);
-                        setModal({
-                            visible: true,
-                            resultContent: `${modal.resultContent}\n${sheetInfo[key].name}表内容错误，请检查，单元格如下：\n${sheetInfo[key].bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`))}`,
-                        });
-                        reject(false);
+                        errorInfo +=  `\n${sheetInfo[key].name}表内容错误，请检查，单元格如下：\n${sheetInfo[key].bodyErrorInfo.map((i: any) => (`${i.cellIndex}:${i.errorMessage}\n`)).join('')}`;
                     }
                     if (sheetInfo[key].extraErrorInfo) {
-                        setModal({
-                            visible: true,
-                            resultContent: `${modal.resultContent}\n${sheetInfo[key].extraErrorInfo}`,
-                        });
-                        reject(false);
+                        errorInfo +=  `\n${sheetInfo[key].extraErrorInfo}`;
                     }
                 });
+                if (errorInfo) {
+                    setModal({
+                        visible: true,
+                        resultContent: errorInfo,
+                    });
+                    reject(false);
+                }
                 resolve(true);
                 return;
             });
@@ -341,7 +322,11 @@ const Demo = (props: IProps) => {
     return (
         <div style={props.style || {}}>
             { props.children || null }
-            <Modal style={{ whiteSpace: 'pre-line' }} visible={modal.visible} title={props.resultTitle || '校验结果'} onOk={handleCancelModal} onCancel={handleCancelModal}>
+            <Modal
+              style={{ whiteSpace: 'pre-line' }}
+              visible={modal.visible} title={props.resultTitle || '校验结果'}
+              footer = { <Button  type = "primary" onClick = { handleCancelModal }>确定</Button> }
+            >
                 {
                     modal.resultContent
                 }
