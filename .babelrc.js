@@ -1,8 +1,8 @@
 /*
  * @Author: your name
  * @Date: 2021-04-17 13:57:58
- * @LastEditTime: 2021-04-17 13:58:45
- * @LastEditors: your name
+ * @LastEditTime: 2021-05-14 15:07:54
+ * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: /validate-upload-file/.babelrc.js
  */
@@ -13,7 +13,7 @@ const loose = true
 
 module.exports = {
   // 设置modules:false来避免babel转换成commonjs之后rollup执行会报错
-  presets: [['@babel/env', { loose, modules: false }]],
+  presets: [['@babel/preset-env', { loose, modules: false }]],
   plugins: [
     ['@babel/proposal-decorators', { legacy: true }],
     ['@babel/proposal-object-rest-spread', { loose }],
