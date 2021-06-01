@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-04-17 13:57:58
- * @LastEditTime: 2021-05-14 15:07:54
+ * @LastEditTime: 2021-06-01 18:54:48
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: /validate-upload-file/.babelrc.js
@@ -17,6 +17,7 @@ module.exports = {
   plugins: [
     ['@babel/proposal-decorators', { legacy: true }],
     ['@babel/proposal-object-rest-spread', { loose }],
+    ['@babel/helper-create-regexp-features-plugin'],
     // 对jsx语法进行转换
     '@babel/transform-react-jsx',
     cjs && ['@babel/transform-modules-commonjs', { loose }],

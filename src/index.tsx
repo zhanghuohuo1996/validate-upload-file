@@ -1,13 +1,29 @@
 /*
  * @Author: your name
  * @Date: 2021-04-08 13:41:59
- * @LastEditTime: 2021-04-29 19:14:22
+ * @LastEditTime: 2021-06-01 19:34:54
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: /fe-otms-monitor/src/containers/Demo/index.tsx
  */
 import * as React from 'react';
 import { Upload, Modal, Button } from 'antd';
+const rewritePattern = require('regexpu-core');
+const { generateRegexpuOptions } = require('@babel/helper-create-regexp-features-plugin/lib/util');
+
+const { RegExp } = window;
+try {
+  // eslint-disable-next-line no-new
+  new RegExp('a', 'u');
+} catch (err) {
+  (window  as any).RegExp = (pattern: any, flags: any) => {
+    if (flags && flags.includes('u')) {
+      return new RegExp(rewritePattern(pattern, flags, generateRegexpuOptions({flags, pattern})));
+    }
+    return new RegExp(pattern, flags);
+  };
+  (window.RegExp as any).prototype = RegExp;
+}
 const ExcelJS = require('exceljs/dist/exceljs.bare');
 const Papa = require('papaparse');
 const jschardet = require('jschardet');
@@ -211,9 +227,9 @@ const Demo = (props: IProps) => {
                     return;
                 }
                 // 以下是对excel的处理
-                const buffer = file.arrayBuffer();
+                // const buffer = file.arrayBuffer();
                 const workbook = new ExcelJS.Workbook();
-                await workbook.xlsx.load(buffer);
+                await workbook.xlsx.load(file);
                 let sheetInfo = {} as any;
                 workbook.eachSheet(async function(worksheet: any, sheetId: any) {
                     // 先获取当前sheet中的有效数据
