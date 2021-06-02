@@ -84,7 +84,8 @@ export default {
       exclude: '**/node_modules/**',
       runtimeHelpers: true,
       plugins: [
-        "@babel/plugin-external-helpers"
+        "@babel/plugin-external-helpers",
+        "@babel/helper-create-regexp-features-plugin"
       ]
     }),
     tsPlugin,
@@ -104,6 +105,6 @@ export default {
       'process.env.NODE_ENV':  JSON.stringify(env || 'development'),
     }),
     // 生产环境执行terser压缩代码
-    terser(),
+    // terser(),
   ],
 }
