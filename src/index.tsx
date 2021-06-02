@@ -77,7 +77,7 @@ function dataValidation(value: any, validation: any) {
     if (!validation) {
         return true;
     }
-    if (!validation.allowBlank && !String(value)) {
+    if (!validation.allowBlank && (!value || !String(value))) {
         return false;
     }
     //  默认规则
@@ -134,7 +134,14 @@ async function getJsonFromCsv(file: any) {
         Papa.parse(data.file, {
             encoding: data.encoding,
             complete: function(results: any) {
-                resolve(results.data);
+                let csvData = results.data;
+                if (Array.isArray(results.data) && Array.isArray(results.data[results.data.length - 1])) {
+                    const last = results.data[results.data.length - 1].filter((item: any) => item);
+                    if (!last.length) {
+                        csvData.splice(-1);
+                    }
+                }
+                resolve(csvData);
             }
         });
     });
@@ -231,6 +238,7 @@ const Demo = (props: IProps) => {
                 const workbook = new ExcelJS.Workbook();
                 await workbook.xlsx.load(file);
                 let sheetInfo = {} as any;
+                let totalLength = {};
                 workbook.eachSheet(async function(worksheet: any, sheetId: any) {
                     // 先获取当前sheet中的有效数据
                     // 校验列标题和列号是不是正确的
@@ -251,23 +259,34 @@ const Demo = (props: IProps) => {
                                     errorTitleIndex.push(A2Zarray[index]);
                                 }
                             });
+                            totalLength = row.values.length;
                         }
                         // 检查是否是空表
                         if (rowNumber === 1 && !row.values.length) {
                             isEmptySheet = true;
                         }
                         // 截取有效数据部分
-                        if (rowNumber > 1) {
-                            row.values.forEach((value: any, index: number) => {
-                                const colIndex = A2Zarray[index];
+                        if (rowNumber > 1 && Array.isArray(row.values)) {
+                            for(let i = 0 ; i < totalLength; i++) {
+                                const colIndex = A2Zarray[i];
                                 const cellIndex = `${rowNumber}行 ${colIndex}列`;
-                                if (!dataValidation(value, sheetProps[colIndex])) {
+                                if (!dataValidation(row.values[i], sheetProps[colIndex])) {
                                     bodyErrorInfo.push({
                                         cellIndex,
                                         errorMessage: sheetProps[colIndex].valueErrorMessage || '值为空或类型错误，请检查',
                                     });
                                 };
-                            });
+                            }
+                            // row.values.forEach((value: any, index: number) => {
+                            //     const colIndex = A2Zarray[index];
+                            //     const cellIndex = `${rowNumber}行 ${colIndex}列`;
+                            //     if (!dataValidation(value, sheetProps[colIndex])) {
+                            //         bodyErrorInfo.push({
+                            //             cellIndex,
+                            //             errorMessage: sheetProps[colIndex].valueErrorMessage || '值为空或类型错误，请检查',
+                            //         });
+                            //     };
+                            // });
                         }
                     });
                     // 检查唯一性
@@ -340,7 +359,9 @@ const Demo = (props: IProps) => {
             { props.children || null }
             <Modal
               style={{ whiteSpace: 'pre-line' }}
-              visible={modal.visible} title={props.resultTitle || '校验结果'}
+              visible={modal.visible}
+              title={props.resultTitle || '校验结果'}
+              onCancel={handleCancelModal}
               footer = { <Button  type = "primary" onClick = { handleCancelModal }>确定</Button> }
             >
                 {
