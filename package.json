@@ -1,43 +1,20 @@
 {
-  "_from": "tblh-validate-upload@0.2.1",
-  "_id": "tblh-validate-upload@0.2.1",
-  "_inBundle": false,
-  "_integrity": "sha512-wW0IPE+HQJ6jUzUa4sT1x3eLZ3Gh/hMYiukaq2I5S5hUXhRBwjvOJof+JLXnaYOVApcjU4tf86hUfKt2AhAJWw==",
-  "_location": "/tblh-validate-upload",
-  "_phantomChildren": {
-    "@babel/code-frame": "7.5.5",
-    "@babel/helper-validator-identifier": "7.14.0",
-    "ansi-styles": "3.2.1",
-    "escape-string-regexp": "1.0.5",
-    "eslint-visitor-keys": "1.1.0",
-    "globals": "11.12.0",
-    "js-tokens": "4.0.0",
-    "jsesc": "2.5.2",
-    "resolve": "1.12.0",
-    "source-map": "0.5.7",
-    "supports-color": "5.5.0",
-    "to-fast-properties": "2.0.0"
+  "name": "tblh-validate-upload",
+  "version": "0.2.1",
+  "description": "",
+  "main": "lib/index.js",
+  "module": "lib/index.esm.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -fr lib && rollup -c"
   },
-  "_requested": {
-    "type": "version",
-    "registry": true,
-    "raw": "tblh-validate-upload@0.2.1",
-    "name": "tblh-validate-upload",
-    "escapedName": "tblh-validate-upload",
-    "rawSpec": "0.2.1",
-    "saveSpec": null,
-    "fetchSpec": "0.2.1"
+  "repository": {
+    "type": "git",
+    "url": ""
   },
-  "_requiredBy": [
-    "#USER",
-    "/"
-  ],
-  "_resolved": "http://npm.sftcwl.com/tblh-validate-upload/-/tblh-validate-upload-0.2.1.tgz",
-  "_shasum": "ed02f04ed51784050dd343ee9cb39eb8d85cfcc2",
-  "_spec": "tblh-validate-upload@0.2.1",
-  "_where": "/Users/sf/Documents/2.代码仓库/apodidae",
   "author": "",
-  "bundleDependencies": false,
+  "license": "ISC",
   "dependencies": {
     "@babel/helper-create-regexp-features-plugin": "^7.14.3",
     "atob": "^2.1.2",
@@ -46,8 +23,6 @@
     "jschardet": "^3.0.0",
     "papaparse": "^5.3.0"
   },
-  "deprecated": false,
-  "description": "<!--  * @Author: your name  * @Date: 2021-04-19 11:04:27  * @LastEditTime: 2021-04-29 17:28:04  * @LastEditors: Please set LastEditors  * @Description: In User Settings Edit  * @FilePath: /validate-upload-file/readme.md --> <!--  * @Author: zhanghuohuo --> ## 说明 ### 支持浏览器端excel\\csv文件的校验并上传",
   "devDependencies": {
     "@babel/cli": "^7.13.14",
     "@babel/core": "^7.13.15",
@@ -81,25 +56,11 @@
     "rollup-plugin-typescript2": "^0.30.0",
     "typescript": "^4.2.4"
   },
-  "license": "ISC",
-  "main": "lib/index.js",
-  "module": "lib/index.esm.js",
-  "name": "tblh-validate-upload",
   "peerDependencies": {
     "@types/react": ">=16.0.0",
     "@types/react-dom": ">=16.0.0",
     "antd": ">=3.23.6",
     "react": ">=16.0.0",
     "react-dom": ">=16.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
-  "scripts": {
-    "build": "rm -fr lib && rollup -c",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "types": "lib/index.d.ts",
-  "version": "0.2.1"
+  }
 }
