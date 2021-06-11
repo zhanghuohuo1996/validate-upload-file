@@ -34,7 +34,7 @@ const { Dragger } = Upload as any;
 interface IProps {
     sheetProps?: ISheetProps;
     handleMoreValidate?: (rows: any, worksheet?: any) => string,
-    dragProps?: object,
+    dragProps?: any,
     style?: object,
     children?: React.ReactNode | string,
     uploadToolTip?: React.ReactNode | string,
@@ -87,7 +87,7 @@ function dataValidation(value: any, validation: any) {
     if (value && validation.type === 'number' && !isInteger(Number(value))) {
         return false;
     }
-    if (value && validation.type === 'custom' && !validation.formulae.test(value)) {
+    if (value && validation.type === 'custome' && !validation.formulae.test(value)) {
         return false;
     }
     if (value && validation.type === 'text' && validation.formulae && value.length > validation.formulae) {
@@ -163,11 +163,16 @@ const Demo = (props: IProps) => {
         multiple: true,
         accept: '.csv,.xlsx',
         action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
+        ...props.dragProps || {},
         beforeUpload: async (file: any) => {
+            if (props.dragProps && props.dragProps.beforeUpload && !props.dragProps.beforeUpload()) {
+                return new Promise((resolve, reject) => reject(false));
+            }
+
             if (!sheetProps) {
                 return true;
             }
-           
+
             return new Promise(async (resolve, reject) => {
                 if (type === 'csv') {
                     const json = await getJsonFromCsv(file) as any;
@@ -333,18 +338,6 @@ const Demo = (props: IProps) => {
                 return;
             });
         },
-        onChange(info: any) {
-          const { status } = info.file;
-          if (status !== 'uploading') {
-            // console.log(info.file, info.fileList);
-          }
-          if (status === 'done') {
-            // message.success(`${info.file.name} file uploaded successfully.`);
-          } else if (status === 'error') {
-            // message.error(`${info.file.name} file upload failed.`);
-          }
-        },
-        ...props.dragProps || {},
     };
 
     const handleCancelModal = () => {
