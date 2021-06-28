@@ -40,6 +40,7 @@ interface IProps {
     uploadToolTip?: React.ReactNode | string,
     resultTitle?: string,
     type?: 'excel' | 'csv', // 默认excel
+    psychicPower?: IPsychic, // 特异功能：收录特别的功能
 };
 type IType = 'list' | 'number' | 'text' | 'custome'; 
 interface ISheetProps {
@@ -56,6 +57,10 @@ interface ICellErrorInfo {
     cellIndex: string;
     errorMessage: string;
 }
+interface IPsychic {
+    notUpload: boolean; // 使用文件校验功能，但不在beforeUpload中立即上传
+}
+
 
 /**
  * 工具函数
@@ -235,6 +240,8 @@ const Demo = (props: IProps) => {
                         });
                         reject(false);
                     }
+                    // 只要文件验证，不想上传或不想立即上传时，传递参数psychicPower.notUpload
+                    if (props && props.psychicPower && props.psychicPower.notUpload) { reject(false); }
                     resolve(true);
                     return;
                 }
@@ -334,6 +341,8 @@ const Demo = (props: IProps) => {
                     });
                     reject(false);
                 }
+                // 只要文件验证，不想上传或不想立即上传时，传递参数psychicPower.notUpload
+                if (props && props.psychicPower && props.psychicPower.notUpload) { reject(false); }
                 resolve(true);
                 return;
             });
