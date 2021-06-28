@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-04-08 13:41:59
- * @LastEditTime: 2021-06-01 19:34:54
+ * @LastEditTime: 2021-06-28 14:48:32
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: /fe-otms-monitor/src/containers/Demo/index.tsx
@@ -59,6 +59,7 @@ interface ICellErrorInfo {
 }
 interface IPsychic {
     notUpload: boolean; // 使用文件校验功能，但不在beforeUpload中立即上传
+    notValidateMore: boolean; // 不对更多校验出口中的返回值进行显示
 }
 
 
@@ -218,6 +219,9 @@ const Demo = (props: IProps) => {
                     // extraInfo
                     if (props.handleMoreValidate) {
                         csvInfo.extraErrorInfo = props.handleMoreValidate(json);
+                        if (props && props.psychicPower && props.psychicPower.notValidateMore) { 
+                            csvInfo.extraErrorInfo = '';
+                        }
                     }
                     // 来吧，展示
                     let errorInfo = '';
@@ -308,6 +312,9 @@ const Demo = (props: IProps) => {
                     if (props.handleMoreValidate) {
                         const rows = worksheet._rows.map((e: any) => Array.isArray(e.values) && e.values.slice(1));
                         extraErrorInfo = props.handleMoreValidate(rows, worksheet);
+                        if (props && props.psychicPower && props.psychicPower.notValidateMore) { 
+                            extraErrorInfo = '';
+                        }
                     }
                     sheetInfo[sheetId] = {
                         ...sheetInfo[sheetId],
