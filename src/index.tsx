@@ -58,8 +58,8 @@ interface ICellErrorInfo {
     errorMessage: string;
 }
 interface IPsychic {
-    notUpload: boolean; // 使用文件校验功能，但不在beforeUpload中立即上传
-    notValidateMore: boolean; // 不对更多校验出口中的返回值进行显示
+    notUpload?: boolean; // 使用文件校验功能，但不在beforeUpload中立即上传
+    notValidateMore?: boolean; // 不对更多校验出口中的返回值进行显示
 }
 
 
